@@ -8,7 +8,7 @@ class View(ft.UserControl):
         super().__init__()
         # page stuff
         self.txt_result = None
-        self._btnRicorsione = None
+        self._btnGrafo = None
         self._btnReset = None
         self._btnCerca = None
         self._timeInfoTxt = None
@@ -38,10 +38,16 @@ class View(ft.UserControl):
 
         self._pollutantDD=ft.Dropdown(label="Seleziona l'inquinante", width=250, disabled=True)
         self._pollutionSlider=ft.Slider(divisions=100, min=0, max=1, label="{value} μg/m3", disabled=True)
-        row1=ft.Row([self._pollutantDD, self._pollutionSlider], alignment=ft.MainAxisAlignment.CENTER,
+        self._btnGrafo = ft.ElevatedButton(text="Crea Grafo",
+                                           on_click=self._controller.handleCreaGrafo)
+        row1=ft.Row([self._pollutantDD, self._pollutionSlider, self._btnGrafo], alignment=ft.MainAxisAlignment.CENTER,
                     vertical_alignment=ft.CrossAxisAlignment.END)
 
         self._dateSel = ft.DatePicker(
+            first_date=datetime(year=2021, month=9, day=1),
+            last_date=datetime(year=2023, month=9, day=1),
+            current_date=datetime(year=2021, month=9, day=1),
+
             on_change=self._controller.handle_dataSel,
             on_dismiss=lambda e: print("Data non selezionata")
         )
@@ -57,23 +63,14 @@ class View(ft.UserControl):
 
         self._btnReset = ft.ElevatedButton(text="Reset", on_click=self._controller.handle_reset, disabled=True)
         cont = ft.Container((self._btnCal1), width=150, alignment=ft.alignment.top_left)
+
         row2 = ft.Row([cont, self._timeSel, self._timeInfoTxt, self._btnReset], alignment=ft.MainAxisAlignment.CENTER,
                       vertical_alignment=ft.CrossAxisAlignment.END)
 
 
-        self._btnCerca = ft.ElevatedButton(text="Ricorsivo",
-                                           on_click=self._controller.handleCerca)
-
-        self._btnRicorsione = ft.ElevatedButton(text="Ricorsione",
-                                           on_click=self._controller.handleRicorsione)
-
-        row3 = ft.Row([ft.Container(self._btnRicorsione, width=250)
-                       ], alignment=ft.MainAxisAlignment.CENTER)
-
         self._page.controls.append(row2)
         self._controller.fillDDPollution()
         self._page.controls.append(row1)
-        self._page.controls.append(row3)
         self.txt_result = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
         self._page.controls.append(self.txt_result)
         self._page.update()

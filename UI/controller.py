@@ -45,7 +45,6 @@ class Controller:
         #Per la query al db avrò bisogno di un timestamp composto da data e ora, quindi devo combinare
         #la data selezionata e l'ora selezionata in un oggetto di tipo Datetime
         self._currentDatetime=datetime.combine(self._currentDate, rounded_t)
-        print(f'Data e ora selezionata: {self._currentDatetime}')
         return
 
     def fillDDPollution(self):
@@ -76,6 +75,7 @@ class Controller:
     def handle_reset(self, e):
         self._view._pollutionSlider.disabled=True
         self._view._pollutantDD.disabled=True
+        self._view._btnReset.disabled=True
         self._view._btnCal1.disabled=False
         self._view._timeSel.disabled=False
         self._currentP=None
@@ -87,7 +87,26 @@ class Controller:
         return
 
     def handleCreaGrafo(self, e):
-        pass
+        self._view.txt_result.controls.clear()
+        if self._currentDatetime is None:
+            self._view.create_alert("Seleziona prima un timestamp")
+        #Creo un grafo con le misurazioni, tuttavia devo controllare che è stato selezionato l'inquinante per
+        #il peso degli archi
+        nn,na=self._model.crea_grafo(self._currentDatetime, self._currentP, self._view._pollutionSlider.value)
+        self._view.txt_result.controls.append(ft.Text(f"Numero di vertici: {nn}\nNumero di archi:{na}"))
+        archi=self._model.sorted_edges()
+        if nn==1: #se ho solo una stazione fuori soglia, non posso visualizzare i dettagli del grafo
+            self._view.txt_result.controls.append(
+                ft.Text(f"Solo una stazione ha rilevato una concentrazione di inquinante sopra la soglia impostata."))
+        if nn==0: #idem
+            self._view.txt_result.controls.append(
+                ft.Text(f"Nessuna stazione ha rilevato un valore superiore alla soglia impostata"))
+        elif nn>1:
+            self._view.txt_result.controls.append(ft.Text(f"Le coppie di nodi con la minor differenza della concentrazione di {self._currentP} sono:"))
+            for a in archi:
+                self._view.txt_result.controls.append(
+                    ft.Text(f"{a[0].STATION_NAME} ↔ {a[1].STATION_NAME}\nDifferenza: {a[2]['weight']} μg/m3"))
+        self._view.update_page()
     def handleCerca(self, e):
         pass
 
