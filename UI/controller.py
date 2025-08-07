@@ -107,6 +107,36 @@ class Controller:
                 self._view.txt_result.controls.append(
                     ft.Text(f"{a[0].STATION_NAME} ↔ {a[1].STATION_NAME}\nDifferenza: {a[2]['weight']} μg/m3"))
         self._view.update_page()
+    def handle_obiettivi_random(self,e):
+        try:
+            N_obiettivi=int(self._view.txt_Nobiettivi.value)
+        except:
+            self._view.create_alert("Formato non corretto!")
+            return
+        if N_obiettivi is not None:
+            obiettivi_gen=self._model.crea_obiettivi_random(self._currentDatetime, N_obiettivi)
+        self._view._btnRicorsione.disabled=False
+        self._view.txt_result.controls.clear()
+        self._view.txt_result.controls.append(
+            ft.Text(f"Numero di obiettivi random generati: {N_obiettivi}"))
+        for o in obiettivi_gen:
+            self._view.txt_result.controls.append(
+                ft.Text(f"{o}"))
+        self._view.update_page()
+        return
+
+    def handle_ricorsione(self,e):
+        #NB: il budget l'ho fissato a 3... modifico dopo.
+        sol, score = self._model.ottimizza_interventi(4)
+        self._view.txt_result.controls.clear()
+        self._view.txt_result.controls.append(
+            ft.Text(f"La soluzione migliore ha peso {score}\nLe stazioni selezionate per gli interventi sono:"))
+        self._view.update_page()
+        for s in sol:
+            self._view.txt_result.controls.append(
+                ft.Text(f"{s.STATION_NAME}, con una concentrazione di PM10 pari a {s.PM10}"))
+        self._view.update_page()
+        return
     def handleCerca(self, e):
         pass
 

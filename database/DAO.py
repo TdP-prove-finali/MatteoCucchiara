@@ -89,7 +89,8 @@ class DAO():
                 ad.NO2, ad.O3, ad.PM2_5, ad.PM10,
                 ad.TOTAL_PRECIPITATION, ad.VEGITATION_H, ad.WINDSPEED_U,  ad.WINDSPEED_V
                 from ancona_data ad 
-                where ad.MEASURE_DATETIME = %s
+                where ad.MEASURE_DATETIME = %s and ad.PM10 is not NULL and ad.PM2_5 is not NULL 
+                and ad.O3 is not NULL and ad.NO2 is not NULL
         """
         cursor.execute(query, (dt,))
         for row in cursor:

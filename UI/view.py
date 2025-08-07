@@ -62,17 +62,26 @@ class View(ft.UserControl):
         self._page.overlay.append(self._dateSel)
 
         self._btnReset = ft.ElevatedButton(text="Reset", on_click=self._controller.handle_reset, disabled=True)
-        cont = ft.Container((self._btnCal1), width=150, alignment=ft.alignment.top_left)
+        cont = ft.Container((self._btnReset), width=250, alignment=ft.alignment.top_right)
 
-        row2 = ft.Row([cont, self._timeSel, self._timeInfoTxt, self._btnReset], alignment=ft.MainAxisAlignment.CENTER,
+        row2 = ft.Row([self._btnCal1, self._timeSel, self._timeInfoTxt, cont], alignment=ft.MainAxisAlignment.CENTER,
                       vertical_alignment=ft.CrossAxisAlignment.END)
+        self.txt_Nobiettivi=ft.TextField(label="Num. obiettivi random", hint_text="Inserisci un numero di obiettivi")
+        self._btnObiettiviRandom=ft.ElevatedButton(text="Crea N obiettivi random", on_click=self._controller.handle_obiettivi_random, disabled=False)
+        self._btnRicorsione=ft.ElevatedButton(text="Ottimizza interventi", on_click=self._controller.handle_ricorsione, disabled=True)
 
+        rowRicorsione=ft.Row([self.txt_Nobiettivi, self._btnObiettiviRandom, self._btnRicorsione], alignment=ft.MainAxisAlignment.CENTER)
 
         self._page.controls.append(row2)
         self._controller.fillDDPollution()
         self._page.controls.append(row1)
+        self._page.controls.append(rowRicorsione)
+
         self.txt_result = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
         self._page.controls.append(self.txt_result)
+
+
+
         self._page.update()
 
 
