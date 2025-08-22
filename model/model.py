@@ -67,7 +67,11 @@ class Model:
     def aggiungi_obiettivo(self, lat, lon):
         self._obiettivi.append((lat, lon))
         print(f"Obiettivo aggiunto: ({lat}, {lon})")
-
+    def model_reset(self):
+        self._graph.clear()
+        self._obiettivi=[]
+        self._current_pollutant=None
+        return
     def _ricorsione(self, parziale, budget):
         # condizione terminale: quando parziale ha un numero di interventi pari al budget
         if len(parziale) == budget:

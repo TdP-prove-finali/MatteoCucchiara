@@ -88,6 +88,7 @@ class Controller:
         self._view._timeSel.value=0
         self._view._timeInfoTxt.value='\n--:--'
         self._view.update_page()
+        self._model.model_reset()
         return
 
     def handleCreaGrafo(self, e):
@@ -150,8 +151,14 @@ class Controller:
         self._view.update_page()
         return
     def handle_obiettivi(self, e):
-        lat = self._view._slider_lat.value
-        lon = self._view._slider_lon.value
+        try:
+            lat = self._view._slider_lat.value
+            lon = self._view._slider_lon.value
+        except:
+            self._view.create_alert("Assicurati di aver usato entrambi gli slider delle coordinate per aggiungere "
+                                    "un nuovo obiettivo!")
+            return
+
         self._view.txt_result_ricorsione.controls.append(
             ft.Text(
                 f"🗺️Ho aggiunto un obiettivo: Lat: {lat}, Lon: {lon}"))
