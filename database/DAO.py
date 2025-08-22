@@ -25,23 +25,16 @@ class DAO():
         conn = DBConnect.get_connection()
         result = []
         cursor = conn.cursor()
-        query=""
-        if pollutant=='NO2':
-            query = """ select min(ad.NO2), max(ad.NO2)
-                        from ancona_data ad 
-                        where ad.MEASURE_DATETIME = %s"""
-        elif pollutant=='O3':
-            query = """ select min(ad.O3), max(ad.O3)
-                        from ancona_data ad 
-                        where ad.MEASURE_DATETIME = %s"""
-        elif pollutant=='PM2_5':
-            query = """ select min(ad.PM2_5), max(ad.PM2_5)
-                        from ancona_data ad 
-                        where ad.MEASURE_DATETIME = %s"""
-        elif pollutant=='PM10':
-            query = """ select min(ad.PM10), max(ad.PM10)
-                        from ancona_data ad 
-                        where ad.MEASURE_DATETIME = %s"""
+        inquinanti_cons = {"NO2", "O3", "PM2_5", "PM10"}
+        if pollutant in inquinanti_cons:
+            query = f"""
+                SELECT MIN(ad.{pollutant}), MAX(ad.{pollutant})
+                FROM ancona_data ad
+                WHERE ad.MEASURE_DATETIME = %s
+            """
+        else:
+            print('Errore nel valore passato alla query')
+            return None
         cursor.execute(query, (dt,))
         for row in cursor:
             result=row
@@ -50,28 +43,15 @@ class DAO():
         return result
 
     @staticmethod
-    def get_min_max_pollution(dt, pollutant):
+    def get_min_max_coord():
         conn = DBConnect.get_connection()
         result = []
         cursor = conn.cursor()
-        query = ""
-        if pollutant == 'NO2':
-            query = """ select min(ad.NO2), max(ad.NO2)
-                            from ancona_data ad 
-                            where ad.MEASURE_DATETIME = %s"""
-        elif pollutant == 'O3':
-            query = """ select min(ad.O3), max(ad.O3)
-                            from ancona_data ad 
-                            where ad.MEASURE_DATETIME = %s"""
-        elif pollutant == 'PM2_5':
-            query = """ select min(ad.PM2_5), max(ad.PM2_5)
-                            from ancona_data ad 
-                            where ad.MEASURE_DATETIME = %s"""
-        elif pollutant == 'PM10':
-            query = """ select min(ad.PM10), max(ad.PM10)
-                            from ancona_data ad 
-                            where ad.MEASURE_DATETIME = %s"""
-        cursor.execute(query, (dt,))
+        query="""
+        select min(ad.LATITUDE), max(ad.LATITUDE), min(ad.LONGITUDE), max(ad.LONGITUDE)
+        from ancona_data ad
+        """
+        cursor.execute(query)
         for row in cursor:
             result = row
         cursor.close()

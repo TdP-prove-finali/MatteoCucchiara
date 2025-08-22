@@ -2,10 +2,13 @@ from datetime import time, datetime
 
 import flet as ft
 
+import model.model
+
 
 class Controller:
     def __init__(self, view, model):
         # the view, with the graphical elements of the UI
+        self._nn = None
         self._view = view
         # the model, which implements the logic of the program and holds the data
         self._model = model
@@ -78,6 +81,7 @@ class Controller:
         self._view._btnReset.disabled=True
         self._view._btnCal1.disabled=False
         self._view._timeSel.disabled=False
+        self._view._btnGrafo.text="Crea grafo"
         self._currentP=None
         self._currentDatetime=None
         self._currentDate=None
@@ -92,50 +96,68 @@ class Controller:
             self._view.create_alert("Seleziona prima un timestamp")
         #Creo un grafo con le misurazioni, tuttavia devo controllare che è stato selezionato l'inquinante per
         #il peso degli archi
-        nn,na=self._model.crea_grafo(self._currentDatetime, self._currentP, self._view._pollutionSlider.value)
-        self._view.txt_result.controls.append(ft.Text(f"Numero di vertici: {nn}\nNumero di archi:{na}"))
+        self._nn,na=self._model.crea_grafo(self._currentDatetime, self._currentP, self._view._pollutionSlider.value)
+        self._view.txt_result.controls.append(ft.Text(f"Numero di vertici: {self._nn}\nNumero di archi:{na}"))
         archi=self._model.sorted_edges()
-        if nn==1: #se ho solo una stazione fuori soglia, non posso visualizzare i dettagli del grafo
+        if self._nn==1: #se ho solo una stazione fuori soglia, non posso visualizzare i dettagli del grafo
             self._view.txt_result.controls.append(
                 ft.Text(f"Solo una stazione ha rilevato una concentrazione di inquinante sopra la soglia impostata."))
-        if nn==0: #idem
+        if self._nn==0: #idem
             self._view.txt_result.controls.append(
                 ft.Text(f"Nessuna stazione ha rilevato un valore superiore alla soglia impostata"))
-        elif nn>1:
+        elif self._nn>1:
             self._view.txt_result.controls.append(ft.Text(f"Le coppie di nodi con la minor differenza della concentrazione di {self._currentP} sono:"))
             for a in archi:
                 self._view.txt_result.controls.append(
                     ft.Text(f"{a[0].STATION_NAME} ↔ {a[1].STATION_NAME}\nDifferenza: {a[2]['weight']} μg/m3"))
-        self._view.update_page()
-    def handle_obiettivi_random(self,e):
-        try:
-            N_obiettivi=int(self._view.txt_Nobiettivi.value)
-        except:
-            self._view.create_alert("Formato non corretto!")
-            return
-        if N_obiettivi is not None:
-            obiettivi_gen=self._model.crea_obiettivi_random(self._currentDatetime, N_obiettivi)
+        #Una volta che ho il grafo posso procedere con il 2 punto
         self._view._btnRicorsione.disabled=False
-        self._view.txt_result.controls.clear()
-        self._view.txt_result.controls.append(
-            ft.Text(f"Numero di obiettivi random generati: {N_obiettivi}"))
-        for o in obiettivi_gen:
-            self._view.txt_result.controls.append(
-                ft.Text(f"{o}"))
+        self._view._btnGrafo.text="Ricalcola grafo"
         self._view.update_page()
-        return
+        return 
+
 
     def handle_ricorsione(self,e):
-        #NB: il budget l'ho fissato a 3... modifico dopo.
-        sol, score = self._model.ottimizza_interventi(4)
-        self._view.txt_result.controls.clear()
-        self._view.txt_result.controls.append(
+        self._view._btnRicorsione.disabled=False
+        self._view.txt_result_ricorsione.controls.clear()
+        self._view.txt_result_ricorsione.controls.append(
+            ft.Text(f"Numero di obiettivi: {len(self._model._obiettivi)}"))
+        if len(self._model._obiettivi)==0:
+            self._view.create_alert("Definisci almeno un obiettivo!")
+            return
+        try:
+            budget = int(self._view.txt_budget.value)
+        except:
+            self._view.create_alert("Inserire un valore per il budget valido!")
+            return
+        # Importante, il budget non può essere maggiore al numero di nodi totali del grafo.
+        if budget<=self._nn:
+            start_time = datetime.now()
+            sol, score = self._model.ottimizza_interventi(budget)
+            end_time =  datetime.now()
+            print(f"Elapsed time: {end_time - start_time}")
+        elif self._nn is None or self._nn == 0:
+            self._view.create_alert(f"Attenzione! il grafo ha 0 nodi o non è stato definito. Riprova dopo aver creato il grafo")
+            return
+        else:
+            self._view.create_alert(f"Attenzione: il budget ha un valore più alto del numero di nodi del grafo. Impostare un valore <= a {self._nn}")
+            return
+        self._view.txt_result_ricorsione.controls.append(
             ft.Text(f"La soluzione migliore ha peso {score}\nLe stazioni selezionate per gli interventi sono:"))
-        self._view.update_page()
         for s in sol:
-            self._view.txt_result.controls.append(
-                ft.Text(f"{s.STATION_NAME}, con una concentrazione di PM10 pari a {s.PM10}"))
+            self._view.txt_result_ricorsione.controls.append(
+                ft.Text(f"📍{s.STATION_NAME}, con una concentrazione di {self._currentP} pari a {getattr(s, self._currentP, 'N/A')}"))
         self._view.update_page()
+        return
+    def handle_obiettivi(self, e):
+        lat = self._view._slider_lat.value
+        lon = self._view._slider_lon.value
+        self._view.txt_result_ricorsione.controls.append(
+            ft.Text(
+                f"🗺️Ho aggiunto un obiettivo: Lat: {lat}, Lon: {lon}"))
+        self._view.update_page()
+        self._model.aggiungi_obiettivo(lat, lon)
+
         return
     def handleCerca(self, e):
         pass

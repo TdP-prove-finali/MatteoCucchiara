@@ -9,37 +9,31 @@ from database.DAO import DAO
 
 class Model:
     def __init__(self):
+        self._current_pollutant = None
         self._graph=nx.Graph()
         self._obiettivi=[]
     def dao_min_max_pollution(self,dt, pollutant):
         return DAO.get_min_max_pollution(dt, pollutant)
     def crea_grafo(self, timestamp, pollutant, treshold):
         self._graph.clear()
+        self._current_pollutant=pollutant
         nodi=DAO.get_measures(timestamp)
         #aggiungo al grafo solo i nodi che superano la soglia.
         for n in nodi:
-            if pollutant == "NO2" and n.NO2 is not None and n.NO2>treshold:
+            val = getattr(n, pollutant, None)
+            if val is not None and val > treshold:
                 self._graph.add_node(n)
-            if pollutant == "O3" and n.O3 is not None and n.O3>treshold:
-                self._graph.add_node(n)
-            if pollutant == "PM2_5" and n.PM2_5 is not None and n.PM2_5>treshold:
-                self._graph.add_node(n)
-            if pollutant == "PM10" and n.PM10 is not None and n.PM10>treshold:
-                self._graph.add_node(n)
+
         for n in self._graph.nodes:
             # uso come fattore meteo quello del vento
             for other in self._graph.nodes:
                 if n is not other:
                     #peso=abs(n.windspeed()-other.windspeed())
-                    peso=0
-                    if pollutant == "NO2":
-                        peso=abs(n.NO2-other.NO2)
-                    if pollutant == "O3":
-                        peso=abs(n.O3-other.O3)
-                    if pollutant == "PM2_5":
-                        peso=abs(n.PM2_5-other.PM2_5)
-                    if pollutant == "PM10":
-                        peso=abs(n.PM10-other.PM10)
+                    try:
+                        peso = abs(getattr(n, pollutant) - getattr(other, pollutant))
+                    except AttributeError:
+                        return None
+
                     self._graph.add_edge(n,other,weight=peso)
 
 
@@ -70,6 +64,9 @@ class Model:
                 best_soluzione=s
         return best_soluzione, best_score
 
+    def aggiungi_obiettivo(self, lat, lon):
+        self._obiettivi.append((lat, lon))
+        print(f"Obiettivo aggiunto: ({lat}, {lon})")
 
     def _ricorsione(self, parziale, budget):
         # condizione terminale: quando parziale ha un numero di interventi pari al budget
@@ -100,14 +97,15 @@ class Model:
         for n in grafo_aggiornato:
             for s in soluzione:
                 if s.STATION_ID==n.STATION_ID:
-                    #riduco del 20% il valore di PM10
-                    n.PM10=n.PM10*0.8
+                    #riduco del 20% il valore di inquinante. Ho dovuto usare settatr per gestire i 4 casi
+                    setattr(n, self._current_pollutant, getattr(n, self._current_pollutant, 0) * 0.5)
         esposizione_totale=0.0
         for o in obiettivi:
             esposizione=0.0
             for n in grafo_aggiornato:
                 distanza=self.calcola_distanza(o, (n.LATITUDE, n.LONGITUDE))
-                esposizione+= (n.PM10/distanza)
+                #uso gettatr per gestire i 4 casi (i 4 inquinanti analizzati)
+                esposizione += getattr(n, self._current_pollutant, 0) / distanza
             esposizione_totale+=esposizione
         return esposizione_totale
 
@@ -140,6 +138,7 @@ class Model:
             print(f'Ho generato il punto N.{i} con coordinate {rand_lat} LAT; {rand_lon} LON')
             punti.append((rand_lat, rand_lon))
         return punti
+
     """
     funzione per calcolare la distanza in metri tra due punti geografici 
     Input: Point(LAT,LON)

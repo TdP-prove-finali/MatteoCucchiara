@@ -1,6 +1,9 @@
 from datetime import datetime
 
 import flet as ft
+from flet_core import Alignment
+
+from database.DAO import DAO
 
 
 class View(ft.UserControl):
@@ -18,11 +21,13 @@ class View(ft.UserControl):
         self._pollutantDD = None
         self._btnCal1 = None
         self._page = page
-        self._page.title = "TESI - prova "
+        self._page.title = "Qualità dell'aria"
         self._page.horizontal_alignment = 'CENTER'
         self._page.theme_mode = ft.ThemeMode.LIGHT
-        self._page.bgcolor = "#ebf4f4"
+        # self._page.bgcolor = "#dfdfdf"
         self._page.window_height = 800
+        self._page.window_width = 900
+
         page.window_center()
         # controller (it is not initialized. Must be initialized in the main, after the controller is created)
         self._controller = None
@@ -33,57 +38,112 @@ class View(ft.UserControl):
 
     def load_interface(self):
         # title
-        self._title = ft.Text("TESI - prova", color="blue", size=24)
+        self._title = ft.Text("Progetto tesi: qualità dell'aria", color="blue", size=24)
         self._page.controls.append(self._title)
-
-        self._pollutantDD=ft.Dropdown(label="Seleziona l'inquinante", width=250, disabled=True)
-        self._pollutionSlider=ft.Slider(divisions=100, min=0, max=1, label="{value} μg/m3", disabled=True)
-        self._btnGrafo = ft.ElevatedButton(text="Crea Grafo",
-                                           on_click=self._controller.handleCreaGrafo)
-        row1=ft.Row([self._pollutantDD, self._pollutionSlider, self._btnGrafo], alignment=ft.MainAxisAlignment.CENTER,
-                    vertical_alignment=ft.CrossAxisAlignment.END)
-
         self._dateSel = ft.DatePicker(
             first_date=datetime(year=2021, month=9, day=1),
             last_date=datetime(year=2023, month=9, day=1),
             current_date=datetime(year=2021, month=9, day=1),
-
             on_change=self._controller.handle_dataSel,
             on_dismiss=lambda e: print("Data non selezionata")
         )
-        self._timeSel=ft.Slider(divisions=23, max=23, label="{value}:00", on_change=self._controller.handle_timeSel)
-        self._timeInfoTxt=ft.Text("\n--:--",
-                                        size=24,
-                                        text_align=ft.TextAlign.CENTER,
-                                        selectable=False,)
-        self._btnCal1 = ft.ElevatedButton("Select date:",
-                                              icon=ft.icons.CALENDAR_MONTH,
-                                              on_click=lambda _: self._dateSel.pick_date())
+        self._timeSel = ft.Slider(divisions=23, max=23, label="{value}:00", on_change=self._controller.handle_timeSel)
+        self._timeInfoTxt = ft.Text("\n--:--",
+                                    size=24,
+                                    text_align=ft.TextAlign.CENTER,
+                                    selectable=False, )
+        self._btnCal1 = ft.ElevatedButton("Seleziona data:",
+                                          icon=ft.icons.CALENDAR_MONTH,
+                                          on_click=lambda _: self._dateSel.pick_date())
         self._page.overlay.append(self._dateSel)
-
         self._btnReset = ft.ElevatedButton(text="Reset", on_click=self._controller.handle_reset, disabled=True)
-        cont = ft.Container((self._btnReset), width=250, alignment=ft.alignment.top_right)
+        row1 = ft.Row(
+            [
+                self._btnCal1,
+                self._timeSel,
+                self._timeInfoTxt,
+                ft.Container(expand=True),
+                self._btnReset
+            ],
+            alignment=ft.MainAxisAlignment.START,
+            vertical_alignment=ft.CrossAxisAlignment.END)
+        self._pollutantDD = ft.Dropdown(label="Seleziona l'inquinante", width=250, disabled=True)
+        self._pollutionSlider = ft.Slider(divisions=100, min=0, max=1, label="{value} μg/m3", disabled=True)
+        self._btnGrafo = ft.ElevatedButton(text="Crea Grafo", on_click=self._controller.handleCreaGrafo)
+        row2 = ft.Row(
+            [
+                self._pollutantDD,
+                self._pollutionSlider,
+                ft.Container(expand=True),
+                self._btnGrafo
+            ],
+            alignment=ft.MainAxisAlignment.START,
+            vertical_alignment=ft.CrossAxisAlignment.END
+        )
 
-        row2 = ft.Row([self._btnCal1, self._timeSel, self._timeInfoTxt, cont], alignment=ft.MainAxisAlignment.CENTER,
-                      vertical_alignment=ft.CrossAxisAlignment.END)
-        self.txt_Nobiettivi=ft.TextField(label="Num. obiettivi random", hint_text="Inserisci un numero di obiettivi")
-        self._btnObiettiviRandom=ft.ElevatedButton(text="Crea N obiettivi random", on_click=self._controller.handle_obiettivi_random, disabled=False)
-        self._btnRicorsione=ft.ElevatedButton(text="Ottimizza interventi", on_click=self._controller.handle_ricorsione, disabled=True)
-
-        rowRicorsione=ft.Row([self.txt_Nobiettivi, self._btnObiettiviRandom, self._btnRicorsione], alignment=ft.MainAxisAlignment.CENTER)
-
-        self._page.controls.append(row2)
+        self.txt_budget = ft.TextField(label="Budget interventi", hint_text="Inserisci il numero di interventi massimo",
+                                       width=200)
+        self._btnRicorsione = ft.ElevatedButton(text="Ottimizza interventi",
+                                                on_click=self._controller.handle_ricorsione, disabled=True)
+        rowRicorsione = ft.Row([self.txt_budget, self._btnRicorsione],
+                               alignment=ft.MainAxisAlignment.CENTER)
+        col1 = ft.Column([row1, row2])
+        cont1 = ft.Container(content=col1, padding=20)
+        self._page.add(ft.Card(content=cont1, color='#e6f2ff'))
         self._controller.fillDDPollution()
-        self._page.controls.append(row1)
+        # leggo direttamente dal dao
+        lat_min, lat_max, lon_min, lon_max = DAO.get_min_max_coord()
+        self._slider_lat = ft.Slider(
+            min=lat_min,
+            max=lat_max,
+            label="Lat: {value}",
+        )
+
+        self._slider_lon = ft.Slider(
+            min=lon_min,
+            max=lon_max,
+            label="Lon: {value}",
+        )
+
+        self._btn_aggiungi = ft.ElevatedButton(
+            text="Aggiungi obiettivo",
+            on_click=self._controller.handle_obiettivi
+        )
+
+        rowObiettivi = ft.Row([ft.Text("Latitudine"), self._slider_lat, ft.Text("Longitudine"),
+                               self._slider_lon, self._btn_aggiungi])
+        self._page.controls.append(rowObiettivi)
         self._page.controls.append(rowRicorsione)
+        self.txt_result = ft.ListView(width=400, expand=1, spacing=10, padding=20, auto_scroll=False)
+        self.txt_result_ricorsione = ft.ListView(width=400, expand=1, spacing=10, padding=20, auto_scroll=False)
 
-        self.txt_result = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
-        self._page.controls.append(self.txt_result)
+        container1 = ft.Container(
+            content=self.txt_result,
+            margin=10,
+            padding=10,
+            alignment=ft.alignment.center,
+            bgcolor=ft.colors.GREY_200,
+            width=400,
+            height=350,
+            border_radius=10,
+        )
+        container2 = ft.Container(
+            content=self.txt_result_ricorsione,
+            margin=10,
+            padding=10,
+            alignment=ft.alignment.center,
+            bgcolor=ft.colors.GREY_200,
+            width=400,
+            height=350,
+            border_radius=10,
+        )
 
-
+        row_results = ft.Row([container1, container2],
+                      alignment=ft.MainAxisAlignment.SPACE_EVENLY,
+                      spacing=50)
+        self._page.controls.append(row_results)
 
         self._page.update()
-
 
     @property
     def controller(self):
@@ -96,7 +156,7 @@ class View(ft.UserControl):
     def set_controller(self, controller):
         self._controller = controller
 
-    #per aprire messaggi di informazione
+    # per aprire messaggi di informazione
     def create_alert(self, message):
         dlg = ft.AlertDialog(title=ft.Text(message))
         self._page.dialog = dlg
