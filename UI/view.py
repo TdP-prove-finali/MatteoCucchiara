@@ -10,6 +10,13 @@ class View(ft.UserControl):
     def __init__(self, page: ft.Page):
         super().__init__()
         # page stuff
+
+        self._btn_aggiungi = None
+        self._slider_lon = None
+        self._slider_lat = None
+        self._btnRicorsione = None
+        self.txt_budget = None
+        self.txt_result_ricorsione = None
         self.txt_result = None
         self._btnGrafo = None
         self._btnReset = None

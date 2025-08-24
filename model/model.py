@@ -12,8 +12,10 @@ class Model:
         self._current_pollutant = None
         self._graph=nx.Graph()
         self._obiettivi=[]
+    #per assegnare gli estremi allo slider della soglia (in un determinato timestamp dt)
     def dao_min_max_pollution(self,dt, pollutant):
         return DAO.get_min_max_pollution(dt, pollutant)
+
     def crea_grafo(self, timestamp, pollutant, treshold):
         self._graph.clear()
         self._current_pollutant=pollutant
@@ -39,6 +41,7 @@ class Model:
 
         return self._graph.number_of_nodes(), self._graph.number_of_edges()
 
+    #ordina gli archi per il peso dell'arco
     def sorted_edges(self):
         return sorted(self._graph.edges(data=True), key=lambda edge: edge[2]['weight'])
 
@@ -46,7 +49,7 @@ class Model:
         self._soluzioni=[]
         # NB: scelgo le stazioni di misura nelle quali effettuare gli interventi
         # solo in quelle che superano la soglia (in pratica i nodi del grafo).
-        # Questa è una approssimazione ma riduce il numero di step di ricorsione
+        # Riduce il numero di step di ricorsione
         # evitando di far esplodere il problema.
         self._candidati=self._graph.nodes()
         self._ricorsione([], budget)
@@ -86,7 +89,7 @@ class Model:
     def calcola_punteggio(self, soluzione, obiettivi):
         """
         step per calcolare il punteggio: genero una copia del grafo con i valori dell'inquinamento ridotte del
-        20% sulle stazioni scelte nella soluzione. In seguito, definisco lo score come la media
+        50% sulle stazioni scelte nella soluzione. In seguito, definisco lo score come la media
         dell' esposizione all' inquinamento sugli obiettivi. Per definire l'esposizione all'inquinamento di
         ogni obiettivo, faccio la sommatoria di tutte le misurazioni dell'inquinante scelto delle centraline
         tenendo conto della distanza centralina-obiettivo con la formula I/distanza: ad es, se misuro 10 mg/m^3 su
