@@ -42,10 +42,6 @@ class Model:
     def sorted_edges(self):
         return sorted(self._graph.edges(data=True), key=lambda edge: edge[2]['weight'])
 
-    def crea_obiettivi_random(self, timestamp, Nobiettivi):
-        self._obiettivi=self.random_points(timestamp, Nobiettivi)
-        return self._obiettivi
-
     def ottimizza_interventi(self, budget):
         self._soluzioni=[]
         # NB: scelgo le stazioni di misura nelle quali effettuare gli interventi
@@ -101,7 +97,7 @@ class Model:
         for n in grafo_aggiornato:
             for s in soluzione:
                 if s.STATION_ID==n.STATION_ID:
-                    #riduco del 20% il valore di inquinante. Ho dovuto usare settatr per gestire i 4 casi
+                    #riduco del 50% il valore di inquinante. Ho dovuto usare settatr per gestire i 4 casi
                     setattr(n, self._current_pollutant, getattr(n, self._current_pollutant, 0) * 0.5)
         esposizione_totale=0.0
         for o in obiettivi:
@@ -112,36 +108,6 @@ class Model:
                 esposizione += getattr(n, self._current_pollutant, 0) / distanza
             esposizione_totale+=esposizione
         return esposizione_totale
-
-
-    def random_points(self,timestamp, N):
-        """
-        Genera N punti random in modo che si trovino all'interno dell'area delimitata dalle massime
-        e minime longitudini e latitudini di tutte le stazioni di misurazione che hanno misurato un valore
-        in un dato timestamp. Restituisce una lista di tuple contenenti latitudine e longitudine dei
-        punti generati.
-        """
-        nodi=DAO.get_measures(timestamp)
-        punti=[]
-        (Lat_min, Lat_max) = (999, 0)
-        (Lon_min, Lon_max) = (999, 0)
-        for n in nodi:
-            #sembrerebbe che che le coordinate geografiche nel db sono tutte presenti (non NULL) e corrette...
-            if n.LATITUDE<Lat_min:
-                Lat_min=n.LATITUDE
-            if n.LATITUDE>Lat_max:
-                Lat_max=n.LATITUDE
-            if n.LONGITUDE<Lon_min:
-                Lon_min=n.LONGITUDE
-            if n.LONGITUDE>Lon_max:
-                Lon_max=n.LONGITUDE
-        #uso random.uniform per generare un float contenuto tra due estremi di tipo float
-        for i in range (1, N+1):
-            rand_lat=random.uniform(Lat_min, Lat_max)
-            rand_lon=random.uniform(Lon_min, Lon_max)
-            print(f'Ho generato il punto N.{i} con coordinate {rand_lat} LAT; {rand_lon} LON')
-            punti.append((rand_lat, rand_lon))
-        return punti
 
     """
     funzione per calcolare la distanza in metri tra due punti geografici 

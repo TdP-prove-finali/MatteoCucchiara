@@ -60,6 +60,7 @@ class View(ft.UserControl):
         row1 = ft.Row(
             [
                 self._btnCal1,
+                ft.Text("               Ora del giorno:\n "),
                 self._timeSel,
                 self._timeInfoTxt,
                 ft.Container(expand=True),
@@ -73,6 +74,7 @@ class View(ft.UserControl):
         row2 = ft.Row(
             [
                 self._pollutantDD,
+                ft.Text("         Soglia dell'inquinante:\n "),
                 self._pollutionSlider,
                 ft.Container(expand=True),
                 self._btnGrafo
